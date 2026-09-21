@@ -511,6 +511,38 @@ export const skillSyncConfigSchema = z
   })
   .optional();
 
+export const CONTEXT_HUB_MIN_SEARCH_LIMIT = 1;
+export const CONTEXT_HUB_MAX_SEARCH_LIMIT = 100;
+export const CONTEXT_HUB_DEFAULT_SEARCH_LIMIT = 20;
+export const CONTEXT_HUB_DEFAULT_SNIPPET_LENGTH = 400;
+
+/**
+ * Cross-provider conversation archive and the MCP surface that serves it.
+ * Disabled by default, so an existing deployment behaves exactly as before
+ * until an operator turns it on.
+ */
+export const contextHubSchema = z
+  .object({
+    enabled: z.boolean().default(false),
+    mcp: z
+      .object({
+        enabled: z.boolean().default(false),
+        searchLimit: z
+          .number()
+          .int()
+          .min(CONTEXT_HUB_MIN_SEARCH_LIMIT)
+          .max(CONTEXT_HUB_MAX_SEARCH_LIMIT)
+          .default(CONTEXT_HUB_DEFAULT_SEARCH_LIMIT),
+        snippetLength: z.number().int().min(80).max(4000).default(CONTEXT_HUB_DEFAULT_SNIPPET_LENGTH),
+        /** Lets a client write notes back into the hub, not only read from it. */
+        allowNotes: z.boolean().default(true),
+      })
+      .default({}),
+  })
+  .optional();
+
+export type ContextHubConfig = z.infer<typeof contextHubSchema>;
+
 export type SkillSyncConfig = z.infer<typeof skillSyncConfigSchema>;
 export type SkillSyncGitHubSourceConfig = z.infer<typeof skillSyncGitHubSourceSchema>;
 
@@ -2911,6 +2943,7 @@ export const configSchema = z.object({
   memory: memorySchema.optional(),
   summarization: summarizationConfigSchema.optional(),
   skillSync: skillSyncConfigSchema,
+  contextHub: contextHubSchema,
   secureImageLinks: z.boolean().optional(),
   imageOutputType: z.nativeEnum(EImageOutputType).default(EImageOutputType.PNG),
   includedTools: z.array(z.string()).optional(),

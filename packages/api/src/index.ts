@@ -37,6 +37,8 @@ export * from './mcp/assistants';
 export * from './mcp/request';
 export * from './mcp/reinitialize';
 export * from './mcp/icons';
+/* Context Hub */
+export * from './hub';
 /* Utilities */
 export * from './mcp/utils';
 export * from './mcp/domainValidation';
