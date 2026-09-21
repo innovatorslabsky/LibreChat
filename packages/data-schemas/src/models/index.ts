@@ -19,6 +19,7 @@ import { createPluginAuthModel } from './pluginAuth';
 import { createSharedLinkModel } from './sharedLink';
 import { createAccessRoleModel } from './accessRole';
 import { createToolFavoriteModel } from './favorite';
+import { createHubThreadModel } from './hubThread';
 import { createMCPServerModel } from './mcpServer';
 import { createAssistantModel } from './assistant';
 import { createSkillFileModel } from './skillFile';
@@ -26,6 +27,7 @@ import { createConversationModel } from './convo';
 import { createToolCallModel } from './toolCall';
 import { createAclEntryModel } from './aclEntry';
 import { createAuditLogModel } from './auditLog';
+import { createHubNoteModel } from './hubNote';
 import { createSessionModel } from './session';
 import { createBalanceModel } from './balance';
 import { createMessageModel } from './message';
@@ -59,6 +61,8 @@ export function createModels(mongoose: typeof import('mongoose')): {
   Message: ReturnType<typeof createMessageModel>;
   Agent: ReturnType<typeof createAgentModel>;
   AgentApiKey: ReturnType<typeof createAgentApiKeyModel>;
+  HubThread: ReturnType<typeof createHubThreadModel>;
+  HubNote: ReturnType<typeof createHubNoteModel>;
   AgentCategory: ReturnType<typeof createAgentCategoryModel>;
   MCPServer: ReturnType<typeof createMCPServerModel>;
   Role: ReturnType<typeof createRoleModel>;
@@ -108,6 +112,8 @@ export function createModels(mongoose: typeof import('mongoose')): {
     Message: createMessageModel(mongoose),
     Agent: createAgentModel(mongoose),
     AgentApiKey: createAgentApiKeyModel(mongoose),
+    HubThread: createHubThreadModel(mongoose),
+    HubNote: createHubNoteModel(mongoose),
     AgentCategory: createAgentCategoryModel(mongoose),
     MCPServer: createMCPServerModel(mongoose),
     Role: createRoleModel(mongoose),

@@ -29,6 +29,8 @@ import {
 import { createAgentCategoryMethods, type AgentCategoryMethods } from './agentCategory';
 /* Agent API Keys */
 import { createAgentApiKeyMethods, type AgentApiKeyMethods } from './agentApiKey';
+/* Context Hub */
+import { createHubMethods, type HubMethods } from './hub';
 /* MCP Servers */
 import { createMCPServerMethods, type MCPServerMethods } from './mcpServer';
 import { createCodeEnvironmentMethods, type CodeEnvironmentMethods } from './codeEnvironment';
@@ -260,6 +262,7 @@ export type AllMethods = UserMethods &
   SkillSyncMethods &
   AgentTriggerDeliveryMethods &
   AgentQueuedTurnMethods &
+  HubMethods &
   ScheduleMethods &
   AgentMethods &
   ConfigMethods &
@@ -459,6 +462,7 @@ export function createMethods(
     ...createToolFavoriteMethods(mongoose),
     ...createAgentCategoryMethods(mongoose),
     ...createAgentApiKeyMethods(mongoose),
+    ...createHubMethods(mongoose),
     ...createMCPServerMethods(mongoose),
     ...createCodeEnvironmentMethods(mongoose),
     ...createAccessRoleMethods(mongoose),
@@ -516,6 +520,7 @@ export type {
   ToolFavoriteMethods,
   AgentCategoryMethods,
   AgentApiKeyMethods,
+  HubMethods,
   MCPServerMethods,
   CodeEnvironmentMethods,
   UserGroupMethods,

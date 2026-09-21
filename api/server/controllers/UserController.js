@@ -514,6 +514,7 @@ const deleteUserController = async (req, res) => {
     await db.deleteToolCalls(user.id);
     await db.deleteUserAgents(user.id);
     await db.deleteAllAgentApiKeys(user._id);
+    await db.deleteAllHubData(user.id);
     await db.deleteAssistants({ user: user.id });
     await db.deleteConversationTags({ user: user.id });
     await db.deleteAllUserMemories(user.id);

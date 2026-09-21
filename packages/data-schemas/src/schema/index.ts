@@ -32,6 +32,8 @@ export { default as userSchema } from './user';
 export { default as memorySchema, isValidMemoryKey } from './memory';
 export { default as toolFavoriteSchema } from './favorite';
 export { default as groupSchema } from './group';
+export { default as hubThreadSchema } from './hubThread';
+export { default as hubNoteSchema } from './hubNote';
 export { default as systemGrantSchema } from './systemGrant';
 export { default as auditLogSchema } from './auditLog';
 export { default as configSchema } from './config';

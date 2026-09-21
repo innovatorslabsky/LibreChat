@@ -4,6 +4,7 @@ import {
   filtersConfigSchema,
   hasActiveFiltersConfig,
   getConfigDefaults,
+  contextHubSchema,
   langfuseConfigSchema,
   skillSyncConfigSchema,
   summarizationConfigSchema,
@@ -76,6 +77,21 @@ export function loadSkillSyncConfig(config: DeepPartial<TCustomConfig>): AppConf
   return parsed.data;
 }
 
+export function loadContextHubConfig(config: DeepPartial<TCustomConfig>): AppConfig['contextHub'] {
+  const raw = config.contextHub;
+  if (!raw || typeof raw !== 'object') {
+    return undefined;
+  }
+
+  const parsed = contextHubSchema.safeParse(raw);
+  if (!parsed.success) {
+    logger.warn('[AppService] Invalid context hub config', parsed.error.flatten());
+    return undefined;
+  }
+
+  return parsed.data;
+}
+
 export function loadLangfuseConfig(config: DeepPartial<TCustomConfig>): AppConfig['langfuse'] {
   const raw = config.langfuse;
   if (!raw || typeof raw !== 'object') {
@@ -139,6 +155,7 @@ export const AppService = async (params?: {
   const memory = loadMemoryConfig(config.memory);
   const summarization = loadSummarizationConfig(config);
   const skillSync = loadSkillSyncConfig(config);
+  const contextHub = loadContextHubConfig(config);
   const filteredTools = config.filteredTools;
   const includedTools = config.includedTools;
   const fileStrategy = (config.fileStrategy ?? configDefaults.fileStrategy) as
@@ -179,6 +196,7 @@ export const AppService = async (params?: {
     actions,
     balance,
     skillSync,
+    contextHub,
     webSearch,
     mcpSettings,
     fileStrategy,

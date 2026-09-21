@@ -15,6 +15,7 @@ import type {
   SummarizationConfig,
   SkillSyncConfig,
   FiltersConfig,
+  ContextHubConfig,
 } from 'librechat-data-provider';
 
 export type JsonSchemaType = {
@@ -72,6 +73,8 @@ export interface AppConfig {
   langfuse?: TCustomConfig['langfuse'];
   /** Skill sync configuration */
   skillSync?: SkillSyncConfig;
+  /** Context hub archive and MCP server configuration */
+  contextHub?: ContextHubConfig;
   /** File storage strategy ('local', 's3', 'firebase', 'azure_blob', 'cloudfront') */
   fileStrategy: FileStorage;
   /** File strategies configuration */
