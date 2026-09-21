@@ -1,0 +1,81 @@
+import type { HubStore, HubNote, HubNoteInput, HubSearchParams, HubThreadSummary } from './store';
+import type { HubThread } from '../thread';
+import { threadText } from '../thread';
+import { summarize } from './store';
+
+/**
+ * A complete `HubStore` held in memory. It is the reference implementation of
+ * the search and note semantics a persistent store must reproduce, and it lets
+ * the MCP server be tested against real behavior rather than a mock.
+ */
+
+export interface HubMemoryStoreOptions {
+  threads?: readonly HubThread[];
+  now?: () => Date;
+  newId?: () => string;
+}
+
+function snippetAround(text: string, at: number, length: number): string {
+  const half = Math.floor(length / 2);
+  const start = Math.max(0, at - half);
+  const end = Math.min(text.length, start + length);
+  const cut = text.slice(start, end).replace(/\s+/g, ' ').trim();
+  return `${start > 0 ? '…' : ''}${cut}${end < text.length ? '…' : ''}`;
+}
+
+export function createHubMemoryStore(options: HubMemoryStoreOptions = {}): HubStore {
+  const threads = new Map<string, HubThread>();
+  const haystacks = new Map<string, string>();
+  const notes: HubNote[] = [];
+  const now = options.now ?? (() => new Date());
+  let sequence = 0;
+  const newId = options.newId ?? (() => `note-${++sequence}`);
+
+  for (const thread of options.threads ?? []) {
+    threads.set(thread.id, thread);
+    haystacks.set(thread.id, `${thread.title}\n${threadText(thread)}`);
+  }
+
+  return {
+    async searchThreads(params: HubSearchParams): Promise<HubThreadSummary[]> {
+      const needle = params.query.trim().toLowerCase();
+      if (needle.length === 0) {
+        return [];
+      }
+      const allowed = params.providers?.length ? new Set(params.providers) : undefined;
+
+      const matches: HubThreadSummary[] = [];
+      for (const thread of threads.values()) {
+        if (allowed && !allowed.has(thread.provider)) {
+          continue;
+        }
+        const haystack = haystacks.get(thread.id) ?? '';
+        const at = haystack.toLowerCase().indexOf(needle);
+        if (at < 0) {
+          continue;
+        }
+        matches.push(summarize(thread, snippetAround(haystack, at, params.snippetLength)));
+      }
+
+      matches.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+      return matches.slice(0, params.limit);
+    },
+
+    async getThread(id: string): Promise<HubThread | undefined> {
+      return threads.get(id);
+    },
+
+    async listNotes(threadId?: string): Promise<HubNote[]> {
+      if (threadId === undefined) {
+        return [...notes];
+      }
+      return notes.filter((note) => note.threadId === threadId);
+    },
+
+    async appendNote(note: HubNoteInput): Promise<HubNote> {
+      const stored: HubNote = { ...note, id: newId(), createdAt: now() };
+      notes.push(stored);
+      return stored;
+    },
+  };
+}

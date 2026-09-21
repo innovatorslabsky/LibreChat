@@ -1,0 +1,158 @@
+import { z } from 'zod';
+import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
+import {
+  CONTEXT_HUB_MAX_SEARCH_LIMIT,
+  CONTEXT_HUB_DEFAULT_SEARCH_LIMIT,
+  CONTEXT_HUB_DEFAULT_SNIPPET_LENGTH,
+} from 'librechat-data-provider';
+import type { HubStore, HubThreadSummary } from './store';
+import type { HubProvider } from '../thread';
+import { renderThreadMarkdown } from '../render';
+import { HUB_PROVIDERS } from '../thread';
+
+/**
+ * The hub's MCP surface. One server serves every client that speaks MCP — a
+ * chat client that mounts it as a connector and a coding agent that mounts it
+ * as a server both read the same archive and write notes the other can read,
+ * which is what lets the two sides share context without either reaching into
+ * the other's storage.
+ */
+
+export interface HubMcpServerOptions {
+  store: HubStore;
+  /** Ceiling for `search_context`; a larger request is clamped to it. */
+  searchLimit?: number;
+  snippetLength?: number;
+  /** When false, the hub is read-only and `append_note` is not registered. */
+  allowNotes?: boolean;
+  name?: string;
+  version?: string;
+}
+
+const TEXT = 'text' as const;
+
+const asText = (text: string) => ({ content: [{ type: TEXT, text }] });
+
+function formatSummary(summary: HubThreadSummary): string {
+  const lines = [
+    `- ${summary.title}`,
+    `  id: ${summary.id}`,
+    `  provider: ${summary.provider}`,
+    `  updated: ${summary.updatedAt.toISOString()}`,
+    `  messages: ${summary.messageCount}`,
+  ];
+  if (summary.snippet) {
+    lines.push(`  match: ${summary.snippet}`);
+  }
+  return lines.join('\n');
+}
+
+export function createHubMcpServer(options: HubMcpServerOptions): McpServer {
+  const {
+    store,
+    searchLimit = CONTEXT_HUB_DEFAULT_SEARCH_LIMIT,
+    snippetLength = CONTEXT_HUB_DEFAULT_SNIPPET_LENGTH,
+    allowNotes = true,
+    name = 'librechat-context-hub',
+    version = '1.0.0',
+  } = options;
+
+  const server = new McpServer({ name, version });
+
+  server.registerTool(
+    'search_context',
+    {
+      title: 'Search archived conversations',
+      description:
+        'Search conversations archived from every connected assistant. Returns thread ids to pass to get_thread.',
+      inputSchema: {
+        query: z.string().min(1).describe('Text to look for in titles and message content'),
+        providers: z
+          .array(z.enum(HUB_PROVIDERS))
+          .optional()
+          .describe('Restrict the search to these providers'),
+        limit: z.number().int().min(1).max(CONTEXT_HUB_MAX_SEARCH_LIMIT).optional(),
+      },
+    },
+    async ({ query, providers, limit }) => {
+      const summaries = await store.searchThreads({
+        query,
+        providers: providers as HubProvider[] | undefined,
+        limit: Math.min(limit ?? searchLimit, searchLimit),
+        snippetLength,
+      });
+      if (summaries.length === 0) {
+        return asText(`No archived conversation matches "${query}".`);
+      }
+      return asText(summaries.map(formatSummary).join('\n\n'));
+    },
+  );
+
+  server.registerTool(
+    'get_thread',
+    {
+      title: 'Read one archived conversation',
+      description:
+        'Return a full archived conversation as Markdown, including reasoning and tool segments the provider exported.',
+      inputSchema: {
+        id: z.string().min(1).describe('Thread id from search_context, such as "claude:abc123"'),
+      },
+    },
+    async ({ id }) => {
+      const thread = await store.getThread(id);
+      if (!thread) {
+        return asText(`No archived conversation has id "${id}".`);
+      }
+      return asText(renderThreadMarkdown(thread));
+    },
+  );
+
+  server.registerTool(
+    'read_notes',
+    {
+      title: 'Read hub notes',
+      description:
+        'Read notes written into the hub, optionally only those anchored to one thread. Notes are how one client leaves context for another.',
+      inputSchema: {
+        threadId: z.string().min(1).optional().describe('Only notes anchored to this thread'),
+      },
+    },
+    async ({ threadId }) => {
+      const notes = await store.listNotes(threadId);
+      if (notes.length === 0) {
+        return asText(
+          threadId ? `No notes are anchored to "${threadId}".` : 'The hub has no notes.',
+        );
+      }
+      const rendered = notes.map(
+        (note) =>
+          `## ${note.title}\n${note.createdAt.toISOString()}${
+            note.threadId ? ` · ${note.threadId}` : ''
+          }\n\n${note.text}`,
+      );
+      return asText(rendered.join('\n\n'));
+    },
+  );
+
+  if (allowNotes) {
+    server.registerTool(
+      'append_note',
+      {
+        title: 'Write a note into the hub',
+        description:
+          'Record a durable note other clients can read, optionally anchored to an archived thread.',
+        inputSchema: {
+          title: z.string().min(1).describe('Short label for the note'),
+          text: z.string().min(1).describe('The note body, in Markdown'),
+          threadId: z.string().min(1).optional().describe('Anchor the note to this thread'),
+        },
+      },
+      async ({ title, text, threadId }) => {
+        const note = await store.appendNote({ title, text, threadId });
+        return asText(`Saved note ${note.id}.`);
+      },
+    );
+  }
+
+  return server;
+}
