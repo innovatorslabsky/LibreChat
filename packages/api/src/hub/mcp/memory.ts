@@ -1,5 +1,6 @@
 import type { HubStore, HubNote, HubNoteInput, HubSearchParams, HubThreadSummary } from './store';
 import type { HubThread } from '../thread';
+import { snippetAround } from './snippet';
 import { threadText } from '../thread';
 import { summarize } from './store';
 
@@ -13,14 +14,6 @@ export interface HubMemoryStoreOptions {
   threads?: readonly HubThread[];
   now?: () => Date;
   newId?: () => string;
-}
-
-function snippetAround(text: string, at: number, length: number): string {
-  const half = Math.floor(length / 2);
-  const start = Math.max(0, at - half);
-  const end = Math.min(text.length, start + length);
-  const cut = text.slice(start, end).replace(/\s+/g, ' ').trim();
-  return `${start > 0 ? '…' : ''}${cut}${end < text.length ? '…' : ''}`;
 }
 
 export function createHubMemoryStore(options: HubMemoryStoreOptions = {}): HubStore {

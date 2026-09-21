@@ -1,0 +1,101 @@
+import { rateLimit } from 'express-rate-limit';
+import { logger } from '@librechat/data-schemas';
+import type { AppConfig } from '@librechat/data-schemas';
+import type { RequestHandler, Response } from 'express';
+import type { ServerRequest } from '../../types/http';
+import type { HubStoreMethods } from './mongoStore';
+import { createHubMongoStore } from './mongoStore';
+import { handleHubMcpRequest } from './http';
+
+export const CONTEXT_HUB_MCP_RATE_WINDOW_MS = 60_000;
+export const CONTEXT_HUB_MCP_RATE_MAX = 120;
+
+/**
+ * Scoped by authenticated user, not by IP: the route is reached only with a
+ * valid API key, and IP is the wrong signal once a bearer credential already
+ * identifies the caller — a shared IP should not throttle unrelated users,
+ * and a compromised key should not be able to hide behind IP rotation.
+ */
+export function contextHubMcpRateLimitKey(req: ServerRequest): string {
+  return req.user?.id ?? req.ip ?? 'unknown';
+}
+
+export const contextHubMcpLimiter: RequestHandler = rateLimit({
+  windowMs: CONTEXT_HUB_MCP_RATE_WINDOW_MS,
+  max: CONTEXT_HUB_MCP_RATE_MAX,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => contextHubMcpRateLimitKey(req as ServerRequest),
+});
+
+/** Pure so the gate can be unit-tested without building a request. */
+export function isContextHubMcpEnabled(config: AppConfig | undefined): boolean {
+  return config?.contextHub?.enabled === true && config.contextHub.mcp?.enabled === true;
+}
+
+export interface CreateContextHubMcpHandlerDeps {
+  methods: HubStoreMethods;
+}
+
+/**
+ * Builds the Express handler for the hub's MCP endpoint. Everything that
+ * decides *whether* and *how* to serve the request — the feature gate, the
+ * per-user store, the tool configuration — lives here; the route file in
+ * `api/server` only wires authentication middleware and mounts this handler,
+ * per this repo's rule that `/api` holds wiring, not behavior.
+ *
+ * Authentication (resolving `req.user` from the caller's API key) and the
+ * config gate both run upstream of this handler, in that order: an invalid
+ * key is rejected before the handler ever runs, so a caller without a valid
+ * key learns nothing about whether the feature is even enabled.
+ */
+export function createContextHubMcpHandler(
+  deps: CreateContextHubMcpHandlerDeps,
+): (req: ServerRequest, res: Response) => Promise<void> {
+  const { methods } = deps;
+
+  return async (req, res) => {
+    if (!isContextHubMcpEnabled(req.config)) {
+      res.status(404).json({
+        error: { message: 'Context hub is not enabled', type: 'not_found', code: 'not_found' },
+      });
+      return;
+    }
+
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({
+        error: {
+          message: 'Authentication is required',
+          type: 'invalid_request_error',
+          code: 'missing_api_key',
+        },
+      });
+      return;
+    }
+
+    const mcpConfig = req.config?.contextHub?.mcp;
+    const store = createHubMongoStore({ methods, userId });
+
+    try {
+      await handleHubMcpRequest({
+        req,
+        res,
+        body: req.body,
+        options: {
+          store,
+          searchLimit: mcpConfig?.searchLimit,
+          snippetLength: mcpConfig?.snippetLength,
+          allowNotes: mcpConfig?.allowNotes,
+        },
+      });
+    } catch (error) {
+      logger.error('[contextHubMcp] Error handling request:', error);
+      if (!res.headersSent) {
+        res.status(500).json({
+          error: { message: 'Internal server error', type: 'server_error', code: 'internal_error' },
+        });
+      }
+    }
+  };
+}

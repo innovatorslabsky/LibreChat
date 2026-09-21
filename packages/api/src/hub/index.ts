@@ -3,3 +3,4 @@ export * from './render';
 export * from './source';
 export * from './adapters';
 export * from './mcp';
+export * from './ingest';

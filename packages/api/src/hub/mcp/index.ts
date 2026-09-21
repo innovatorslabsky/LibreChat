@@ -1,3 +1,7 @@
 export * from './store';
+export * from './snippet';
+export * from './mongoStore';
+export * from './http';
+export * from './route';
 export * from './memory';
 export * from './server';
