@@ -4,6 +4,7 @@ import { createClaudeSource } from './claude';
 
 export * from './chatgpt';
 export * from './claude';
+export * from './librechat';
 
 /**
  * The built-in adapters, in detection order. Claude is checked first because

@@ -354,6 +354,27 @@ describe('GET /api/config', () => {
       expect(response.body.codeEnvironmentDecisionVersion).toBeUndefined();
     });
 
+    it('reports contextHubEnabled false when the operator has not turned on the hub', async () => {
+      mockGetAppConfig.mockResolvedValue(baseAppConfig);
+      const app = createApp(mockUser);
+
+      const response = await request(app).get('/api/config');
+
+      expect(response.body.contextHubEnabled).toBe(false);
+    });
+
+    it('reports contextHubEnabled true only from the enabled flag, not from the archive existing', async () => {
+      mockGetAppConfig.mockResolvedValue({
+        ...baseAppConfig,
+        contextHub: { enabled: true, mcp: { enabled: false } },
+      });
+      const app = createApp(mockUser);
+
+      const response = await request(app).get('/api/config');
+
+      expect(response.body.contextHubEnabled).toBe(true);
+    });
+
     it('does not advertise conversation moves unless the effective policy enables them', async () => {
       mockGetAppConfig.mockResolvedValue(baseAppConfig);
       const app = createApp(mockUser);

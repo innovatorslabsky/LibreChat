@@ -7,3 +7,4 @@ export * from './mcp';
 export * from './ingest';
 export * from './importJob';
 export * from './importRoute';
+export * from './archiveRoute';

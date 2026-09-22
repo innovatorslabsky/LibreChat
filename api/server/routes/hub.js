@@ -1,10 +1,13 @@
 const multer = require('multer');
 const express = require('express');
+const { CLIENT_MESSAGE_SELECT } = require('@librechat/data-schemas');
 const {
   createContextHubMcpHandler,
   createContextHubImportHandler,
+  createContextHubArchiveHandler,
   contextHubMcpLimiter,
   contextHubImportLimiter,
+  contextHubArchiveLimiter,
   createRequireApiKeyAuth,
   resolveImportMaxFileSize,
 } = require('@librechat/api');
@@ -80,6 +83,24 @@ router.post(
   contextHubImportLimiter,
   handleImportUpload,
   importHandler,
+);
+
+/**
+ * "Archive to Context Hub" for a conversation the user already owns —
+ * converts it directly rather than round-tripping through an export file.
+ */
+const archiveHandler = createContextHubArchiveHandler({
+  methods: db,
+  getConvo: db.getConvo,
+  getMessages: (params) => db.getMessages(params, CLIENT_MESSAGE_SELECT),
+});
+
+router.post(
+  '/archive/:conversationId',
+  requireJwtAuth,
+  configMiddleware,
+  contextHubArchiveLimiter,
+  archiveHandler,
 );
 
 module.exports = router;
