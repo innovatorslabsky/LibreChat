@@ -23,11 +23,17 @@ jest.mock('@librechat/client', () => ({
   DropdownPopup: ({ trigger }: { trigger: React.ReactNode }) => trigger,
   TooltipAnchor: ({ render }: { render: React.ReactNode }) => render,
   useMediaQuery: () => false,
+  useToastContext: () => ({ showToast: jest.fn() }),
 }));
 
 jest.mock('~/hooks', () => ({
   useHasAccess: () => true,
   useLocalize: () => (key: string) => key,
+}));
+
+jest.mock('~/data-provider', () => ({
+  useGetStartupConfig: () => ({ data: { contextHubEnabled: false } }),
+  useArchiveConversationToHubMutation: () => ({ mutate: jest.fn(), isLoading: false }),
 }));
 
 jest.mock('~/components/Nav/ExportConversation/ExportModal', () => ({

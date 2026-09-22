@@ -123,6 +123,7 @@ export enum MutationKeys {
   testLangfuseConnection = 'testLangfuseConnection',
   createAgentApiKey = 'createAgentApiKey',
   deleteAgentApiKey = 'deleteAgentApiKey',
+  archiveConversationToHub = 'archiveConversationToHub',
   fileUpload = 'fileUpload',
   fileDelete = 'fileDelete',
   fileUsage = 'fileUsage',

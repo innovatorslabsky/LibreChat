@@ -1,10 +1,12 @@
 import { useState, useRef } from 'react';
 import { useRecoilValue } from 'recoil';
-import { Upload, Share2 } from 'lucide-react';
+import { useToastContext } from '@librechat/client';
+import { Upload, Share2, Database } from 'lucide-react';
 import { PermissionTypes, Permissions } from 'librechat-data-provider';
 import { useGetSharedLinkQuery } from 'librechat-data-provider/react-query';
 import type { ReactNode } from 'react';
 import type * as t from '~/common';
+import { useGetStartupConfig, useArchiveConversationToHubMutation } from '~/data-provider';
 import ExportModal from '~/components/Nav/ExportConversation/ExportModal';
 import { ShareButton } from '~/components/Conversations/ConvoOptions';
 import { useHasAccess, useLocalize } from '~/hooks';
@@ -29,6 +31,7 @@ export default function useExportShare({
   isSharedButtonEnabled: boolean;
 }): UseExportShareResult {
   const localize = useLocalize();
+  const { showToast } = useToastContext();
   const [showExports, setShowExports] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
 
@@ -40,6 +43,18 @@ export default function useExportShare({
     permission: Permissions.CREATE,
   });
   const conversation = useRecoilValue(store.conversationByIndex(0));
+  const { data: startupConfig } = useGetStartupConfig();
+  const contextHubEnabled = startupConfig?.contextHubEnabled === true;
+  const { mutate: archiveToHub, isLoading: isArchivingToHub } = useArchiveConversationToHubMutation(
+    {
+      onSuccess: () => {
+        showToast({ message: localize('com_ui_context_hub_save_success'), status: 'success' });
+      },
+      onError: () => {
+        showToast({ message: localize('com_ui_context_hub_save_error'), status: 'error' });
+      },
+    },
+  );
 
   const exportable =
     conversation != null &&
@@ -71,6 +86,18 @@ export default function useExportShare({
       hideOnClick: false,
       ref: exportButtonRef,
       render: (props) => <button {...props} />,
+    },
+    {
+      label: localize('com_ui_context_hub_save'),
+      onClick: () => {
+        if (conversation?.conversationId) {
+          archiveToHub(conversation.conversationId);
+        }
+      },
+      icon: <Database className="size-4 text-text-secondary" />,
+      show: contextHubEnabled,
+      disabled: isArchivingToHub,
+      render: (props) => <button {...props} data-testid="context-hub-save-menu-item" />,
     },
   ];
 

@@ -963,6 +963,12 @@ export function forkConversation(payload: t.TForkConvoRequest): Promise<t.TForkC
   return request.post(endpoints.forkConversation(), payload);
 }
 
+export function archiveConversationToHub(
+  conversationId: string,
+): Promise<t.TArchiveConversationToHubResponse> {
+  return request.post(endpoints.archiveConversationToHub(conversationId));
+}
+
 export function forkSharedConversation(
   shareId: string,
   targetMessageIndex?: number,

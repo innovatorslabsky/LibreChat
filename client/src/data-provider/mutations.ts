@@ -934,6 +934,27 @@ export const useForkConvoMutation = (
   });
 };
 
+export type ArchiveConversationToHubOptions = t.MutationOptions<
+  t.TArchiveConversationToHubResponse,
+  string
+>;
+
+/**
+ * Sends one of the caller's own conversations into the context hub archive —
+ * distinct from `useArchiveConvoMutation`, which hides a conversation from
+ * the sidebar. Nothing about the conversation itself changes here; no cache
+ * needs invalidating.
+ */
+export const useArchiveConversationToHubMutation = (
+  options?: ArchiveConversationToHubOptions,
+): UseMutationResult<t.TArchiveConversationToHubResponse, unknown, string, unknown> => {
+  return useMutation(
+    [MutationKeys.archiveConversationToHub],
+    (conversationId: string) => dataService.archiveConversationToHub(conversationId),
+    options,
+  );
+};
+
 export const useForkSharedConvoMutation = (
   options?: t.ForkSharedConvoOptions,
 ): UseMutationResult<t.TForkConvoResponse, unknown, t.TForkSharedConvoRequest, unknown> => {

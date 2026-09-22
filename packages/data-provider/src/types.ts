@@ -540,6 +540,13 @@ export type TForkConvoResponse = {
   messages: TMessage[];
 };
 
+/** Response from archiving one of the caller's own conversations into the context hub. */
+export type TArchiveConversationToHubResponse = {
+  message: string;
+  threadId: string;
+  messageCount: number;
+};
+
 export type TForkSharedConvoRequest = {
   shareId: string;
   /** Index of the viewer's active message within the shared payload; reduces the
