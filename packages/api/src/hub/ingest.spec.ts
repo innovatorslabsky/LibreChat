@@ -22,7 +22,7 @@ describe('ingestExport', () => {
 
     const result = await ingestExport(
       createDefaultChatSources(),
-      { upsertHubThread },
+      { methods: { upsertHubThread } },
       'user-a',
       claudeExport,
     );
@@ -40,7 +40,9 @@ describe('ingestExport', () => {
     const upsertHubThread = jest.fn();
 
     await expect(
-      ingestExport(createDefaultChatSources(), { upsertHubThread }, 'user-a', { bogus: true }),
+      ingestExport(createDefaultChatSources(), { methods: { upsertHubThread } }, 'user-a', {
+        bogus: true,
+      }),
     ).rejects.toThrow();
     expect(upsertHubThread).not.toHaveBeenCalled();
   });

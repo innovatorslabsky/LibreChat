@@ -26,7 +26,7 @@ describe('runHubImportJob', () => {
     const result = await runHubImportJob({
       filepath,
       userId: 'user-a',
-      methods: { upsertHubThread },
+      targets: { methods: { upsertHubThread } },
     });
 
     expect(result.threadCount).toBe(1);
@@ -42,7 +42,7 @@ describe('runHubImportJob', () => {
     const upsertHubThread = jest.fn();
 
     await expect(
-      runHubImportJob({ filepath, userId: 'user-a', methods: { upsertHubThread } }),
+      runHubImportJob({ filepath, userId: 'user-a', targets: { methods: { upsertHubThread } } }),
     ).rejects.toThrow();
     expect(upsertHubThread).not.toHaveBeenCalled();
     await expect(fs.access(filepath)).rejects.toThrow();
@@ -53,7 +53,7 @@ describe('runHubImportJob', () => {
     const upsertHubThread = jest.fn();
 
     await expect(
-      runHubImportJob({ filepath, userId: 'user-a', methods: { upsertHubThread } }),
+      runHubImportJob({ filepath, userId: 'user-a', targets: { methods: { upsertHubThread } } }),
     ).rejects.toThrow(SyntaxError);
     await expect(fs.access(filepath)).rejects.toThrow();
   });
@@ -63,7 +63,12 @@ describe('runHubImportJob', () => {
     const upsertHubThread = jest.fn();
 
     await expect(
-      runHubImportJob({ filepath, userId: 'user-a', methods: { upsertHubThread }, maxFileSize: 1 }),
+      runHubImportJob({
+        filepath,
+        userId: 'user-a',
+        targets: { methods: { upsertHubThread } },
+        maxFileSize: 1,
+      }),
     ).rejects.toThrow(HubImportFileTooLargeError);
     expect(upsertHubThread).not.toHaveBeenCalled();
   });

@@ -342,7 +342,7 @@ export const SKILL_SYNC_MAX_INTERVAL_MINUTES = Math.floor(2147483647 / 60_000);
 export const SKILL_SYNC_DEFAULT_DISCOVERY_DEPTH = 2;
 export const SKILL_SYNC_MAX_DISCOVERY_DEPTH = 10;
 
-const skillSyncGitHubOwnerSchema = z
+export const skillSyncGitHubOwnerSchema = z
   .string()
   .min(1)
   .max(39)
@@ -350,7 +350,7 @@ const skillSyncGitHubOwnerSchema = z
     message: 'must be a valid GitHub owner name',
   });
 
-const skillSyncGitHubRepoSchema = z
+export const skillSyncGitHubRepoSchema = z
   .string()
   .min(1)
   .max(100)
@@ -370,7 +370,7 @@ function hasInvalidGitRefCharacter(value: string): boolean {
   return false;
 }
 
-const skillSyncGitHubRefSchema = z
+export const skillSyncGitHubRefSchema = z
   .string()
   .min(1)
   .max(255)
@@ -399,7 +399,7 @@ const skillSyncGitHubRefSchema = z
     },
   );
 
-const skillSyncPathSchema = z
+export const skillSyncPathSchema = z
   .string()
   .max(500)
   .refine((value) => value.trim().length > 0, { message: 'must not be empty' })
@@ -421,7 +421,7 @@ const skillSyncPathSchema = z
     },
   );
 
-const skillSyncTokenReferenceSchema = z
+export const skillSyncTokenReferenceSchema = z
   .string()
   .trim()
   .regex(/^\$\{[A-Za-z_][A-Za-z0-9_]*\}$/, {
@@ -521,6 +521,24 @@ export const CONTEXT_HUB_DEFAULT_SNIPPET_LENGTH = 400;
  * Disabled by default, so an existing deployment behaves exactly as before
  * until an operator turns it on.
  */
+/**
+ * A single GitHub repository the archive mirrors to as Markdown, one file
+ * per thread — a second, file-based read path (Claude Code included) that
+ * needs no MCP round trip. Reuses the skill sync system's own owner/repo/ref
+ * and env-var token-reference schemas rather than redefining them: a token
+ * lives in `librechat.yaml` only as `${ENV_VAR_NAME}`, resolved from the
+ * process environment, never as a raw secret in the file.
+ */
+export const contextHubGitTargetSchema = z.object({
+  enabled: z.boolean().default(false),
+  owner: skillSyncGitHubOwnerSchema,
+  repo: skillSyncGitHubRepoSchema,
+  ref: skillSyncGitHubRefSchema.default('main'),
+  /** Directory inside the repo threads are written under, e.g. `"context-hub"`. */
+  pathPrefix: skillSyncPathSchema.default(''),
+  token: skillSyncTokenReferenceSchema,
+});
+
 export const contextHubSchema = z
   .object({
     enabled: z.boolean().default(false),
@@ -533,15 +551,22 @@ export const contextHubSchema = z
           .min(CONTEXT_HUB_MIN_SEARCH_LIMIT)
           .max(CONTEXT_HUB_MAX_SEARCH_LIMIT)
           .default(CONTEXT_HUB_DEFAULT_SEARCH_LIMIT),
-        snippetLength: z.number().int().min(80).max(4000).default(CONTEXT_HUB_DEFAULT_SNIPPET_LENGTH),
+        snippetLength: z
+          .number()
+          .int()
+          .min(80)
+          .max(4000)
+          .default(CONTEXT_HUB_DEFAULT_SNIPPET_LENGTH),
         /** Lets a client write notes back into the hub, not only read from it. */
         allowNotes: z.boolean().default(true),
       })
       .default({}),
+    git: contextHubGitTargetSchema.optional(),
   })
   .optional();
 
 export type ContextHubConfig = z.infer<typeof contextHubSchema>;
+export type ContextHubGitTargetConfig = z.infer<typeof contextHubGitTargetSchema>;
 
 export type SkillSyncConfig = z.infer<typeof skillSyncConfigSchema>;
 export type SkillSyncGitHubSourceConfig = z.infer<typeof skillSyncGitHubSourceSchema>;

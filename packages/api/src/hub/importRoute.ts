@@ -4,6 +4,7 @@ import type { HubMethods } from '@librechat/data-schemas';
 import type { RequestHandler, Response } from 'express';
 import type { ServerRequest } from '../types/http';
 import { runHubImportJob, HubImportFileTooLargeError } from './importJob';
+import { createConfiguredGitArchiveTarget } from './git/config';
 import { isContextHubEnabled } from './config';
 import { UnknownExportError } from './source';
 
@@ -76,7 +77,11 @@ export function createContextHubImportHandler(
     }
 
     try {
-      const result = await runHubImportJob({ filepath: req.file.path, userId, methods });
+      const targets = {
+        methods,
+        git: createConfiguredGitArchiveTarget(req.config?.contextHub?.git),
+      };
+      const result = await runHubImportJob({ filepath: req.file.path, userId, targets });
       res.status(201).json({
         message: 'Conversation(s) archived successfully',
         threadCount: result.threadCount,

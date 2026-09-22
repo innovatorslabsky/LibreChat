@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import { logger } from '@librechat/data-schemas';
-import type { HubMethods } from '@librechat/data-schemas';
+import type { ArchiveTargets } from './archiveTargets';
 import { resolveImportMaxFileSize } from '../utils/import';
 import { createDefaultChatSources } from './adapters';
 import { ingestExport } from './ingest';
@@ -18,7 +18,7 @@ export class HubImportFileTooLargeError extends Error {
 export interface RunHubImportJobParams {
   filepath: string;
   userId: string;
-  methods: Pick<HubMethods, 'upsertHubThread'>;
+  targets: ArchiveTargets;
   /** Defaults to the same operator-configured ceiling conversation import uses. */
   maxFileSize?: number;
 }
@@ -34,7 +34,7 @@ export interface HubImportJobResult {
  * upload does not leave a stray file in the user's temp directory.
  */
 export async function runHubImportJob(params: RunHubImportJobParams): Promise<HubImportJobResult> {
-  const { filepath, userId, methods, maxFileSize = resolveImportMaxFileSize() } = params;
+  const { filepath, userId, targets, maxFileSize = resolveImportMaxFileSize() } = params;
   try {
     const stat = await fs.stat(filepath);
     if (stat.size > maxFileSize) {
@@ -43,7 +43,7 @@ export async function runHubImportJob(params: RunHubImportJobParams): Promise<Hu
 
     const raw = await fs.readFile(filepath, 'utf8');
     const payload: unknown = JSON.parse(raw);
-    const { threads } = await ingestExport(createDefaultChatSources(), methods, userId, payload);
+    const { threads } = await ingestExport(createDefaultChatSources(), targets, userId, payload);
     return { threadCount: threads.length };
   } finally {
     try {

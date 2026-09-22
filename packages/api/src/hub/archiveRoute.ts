@@ -5,7 +5,8 @@ import type { RequestHandler, Response } from 'express';
 import type { LibreChatArchiveMessage, LibreChatArchiveConversation } from './adapters/librechat';
 import type { ServerRequest } from '../types/http';
 import { convertLibreChatConversation } from './adapters/librechat';
-import { archiveHubThread } from './mcp/mongoStore';
+import { createConfiguredGitArchiveTarget } from './git/config';
+import { archiveThreadToTargets } from './archiveTargets';
 import { isContextHubEnabled } from './config';
 
 export const CONTEXT_HUB_ARCHIVE_RATE_WINDOW_MS = 60_000;
@@ -94,7 +95,11 @@ export function createContextHubArchiveHandler(
 
       const messages = await getMessages({ conversationId, user: userId });
       const thread = convertLibreChatConversation(conversation, messages);
-      await archiveHubThread(methods, userId, thread);
+      const targets = {
+        methods,
+        git: createConfiguredGitArchiveTarget(req.config?.contextHub?.git),
+      };
+      await archiveThreadToTargets(targets, userId, thread);
 
       res.status(201).json({
         message: 'Conversation archived successfully',
