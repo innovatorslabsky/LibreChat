@@ -51,6 +51,11 @@
   </a>
 </p>
 
+> **This fork adds MindFerry**, a context hub that archives your conversations (from
+> LibreChat itself, or imported from other providers' exports) and serves them back over MCP
+> to tools like Claude Code or Claude.ai's web connector. See [`docs/mindferry.md`](docs/mindferry.md)
+> for setup.
+
 ## 🚀 What's New in v0.8.8-rc3
 
 - **Agent Management API (beta):** Create, discover, update, and delete Agents; manage Agent files and Skills; and authenticate machine clients through deployment-bound OIDC identities while preserving existing role and Agent access controls.
