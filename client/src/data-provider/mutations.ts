@@ -955,6 +955,27 @@ export const useArchiveConversationToHubMutation = (
   );
 };
 
+export type SubmitHubOAuthConsentOptions = t.MutationOptions<
+  t.THubOAuthConsentResponse,
+  t.THubOAuthConsentRequest
+>;
+
+/**
+ * The user's approve/deny decision on the hub's OAuth consent page
+ * (`/mindferry/connect`). The response names where the browser goes next —
+ * back to the connecting client, carrying a code or an `access_denied`
+ * error — never a page this app renders itself.
+ */
+export const useSubmitHubOAuthConsentMutation = (
+  options?: SubmitHubOAuthConsentOptions,
+): UseMutationResult<t.THubOAuthConsentResponse, unknown, t.THubOAuthConsentRequest, unknown> => {
+  return useMutation(
+    [MutationKeys.submitHubOAuthConsent],
+    (payload: t.THubOAuthConsentRequest) => dataService.submitHubOAuthConsent(payload),
+    options,
+  );
+};
+
 export const useForkSharedConvoMutation = (
   options?: t.ForkSharedConvoOptions,
 ): UseMutationResult<t.TForkConvoResponse, unknown, t.TForkSharedConvoRequest, unknown> => {

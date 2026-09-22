@@ -969,6 +969,12 @@ export function archiveConversationToHub(
   return request.post(endpoints.archiveConversationToHub(conversationId));
 }
 
+export function submitHubOAuthConsent(
+  payload: t.THubOAuthConsentRequest,
+): Promise<t.THubOAuthConsentResponse> {
+  return request.post(endpoints.hubOAuthConsent(), payload);
+}
+
 export function forkSharedConversation(
   shareId: string,
   targetMessageIndex?: number,

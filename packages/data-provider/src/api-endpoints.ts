@@ -166,6 +166,8 @@ export const archiveConversationToHub = (conversationId: string) =>
 /** The absolute URL a client pastes into an `.mcp.json` entry or a Claude.ai connector. */
 export const contextHubMcpEndpoint = () => `${window.location.origin}${BASE_URL}/api/hub/mcp`;
 
+export const hubOAuthConsent = () => `${BASE_URL}/api/hub/oauth/consent`;
+
 export const projectsRoot = `${BASE_URL}/api/projects`;
 
 export const projects = (params: q.ProjectListParams = {}) => {

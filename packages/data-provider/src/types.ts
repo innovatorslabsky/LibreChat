@@ -547,6 +547,26 @@ export type TArchiveConversationToHubResponse = {
   messageCount: number;
 };
 
+/** The hub's OAuth `/authorize` redirect forwards these as query params to the SPA's consent page. */
+export type THubOAuthConsentParams = {
+  client_id: string;
+  redirect_uri: string;
+  code_challenge: string;
+  state?: string;
+};
+
+export type THubOAuthConsentRequest = THubOAuthConsentParams & {
+  response_type: 'code';
+  code_challenge_method: 'S256';
+  decision: 'approve' | 'deny';
+};
+
+/** Where the browser is sent next — back to the connecting client, carrying either
+ *  an authorization code or an `access_denied` error. */
+export type THubOAuthConsentResponse = {
+  redirectUrl: string;
+};
+
 export type TForkSharedConvoRequest = {
   shareId: string;
   /** Index of the viewer's active message within the shared payload; reduces the
