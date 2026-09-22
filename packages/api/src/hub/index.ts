@@ -18,6 +18,7 @@ export * from './oauth/metadata';
 export * from './oauth/origin';
 export * from './oauth/wwwAuthenticate';
 export * from './oauth/validate';
+export * from './oauth/gate';
 export * from './oauth/registerRoute';
 export * from './oauth/authorizeRoute';
 export * from './oauth/consentRoute';

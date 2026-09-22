@@ -18,6 +18,7 @@ const {
   createHubOAuthTokenHandler,
   hubOAuthRegisterLimiter,
   hubOAuthTokenLimiter,
+  requireHubMcpEnabled,
   generateCheckAccess,
 } = require('@librechat/api');
 const { storage, importFileFilter } = require('~/server/routes/files/multer');
@@ -128,7 +129,10 @@ router.post(
  * their handlers); `/authorize` only validates and redirects to the SPA's
  * consent page; `/consent` is where an authenticated decision actually
  * happens, gated by the same REMOTE_AGENTS permission the API-keys route
- * uses, since approving here mints the same kind of key.
+ * uses, since approving here mints the same kind of key. Every route is
+ * also gated behind `requireHubMcpEnabled`, same as `/mcp` above — the OAuth
+ * server exists only to authorize access to that endpoint, so it goes dark
+ * with it.
  */
 const checkRemoteAgentsUse = generateCheckAccess({
   permissionType: PermissionTypes.REMOTE_AGENTS,
@@ -138,19 +142,34 @@ const checkRemoteAgentsUse = generateCheckAccess({
 
 router.post(
   '/oauth/register',
+  configMiddleware,
+  requireHubMcpEnabled,
   hubOAuthRegisterLimiter,
   createHubOAuthRegisterHandler({ methods: db }),
 );
 
-router.get('/oauth/authorize', createHubOAuthAuthorizeHandler({ methods: db }));
+router.get(
+  '/oauth/authorize',
+  configMiddleware,
+  requireHubMcpEnabled,
+  createHubOAuthAuthorizeHandler({ methods: db }),
+);
 
 router.post(
   '/oauth/consent',
   requireJwtAuth,
+  configMiddleware,
+  requireHubMcpEnabled,
   checkRemoteAgentsUse,
   createHubOAuthConsentHandler({ methods: db }),
 );
 
-router.post('/oauth/token', hubOAuthTokenLimiter, createHubOAuthTokenHandler({ methods: db }));
+router.post(
+  '/oauth/token',
+  configMiddleware,
+  requireHubMcpEnabled,
+  hubOAuthTokenLimiter,
+  createHubOAuthTokenHandler({ methods: db }),
+);
 
 module.exports = router;
