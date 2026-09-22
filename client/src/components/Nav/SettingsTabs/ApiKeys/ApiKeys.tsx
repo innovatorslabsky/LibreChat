@@ -10,6 +10,8 @@ import {
   OGDialogTrigger,
   OGDialogContent,
 } from '@librechat/client';
+import { useGetStartupConfig } from '~/data-provider';
+import ContextHubEndpoint from './ContextHubEndpoint';
 import CreateKeyDialog from './CreateKeyDialog';
 import { useLocalize } from '~/hooks';
 import Admin from './Admin';
@@ -19,6 +21,8 @@ export default function ApiKeys() {
   const localize = useLocalize();
   const [open, setOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
+  const { data: startupConfig } = useGetStartupConfig();
+  const contextHubEnabled = startupConfig?.contextHubEnabled === true;
 
   return (
     <div className="flex items-center justify-between">
@@ -39,6 +43,7 @@ export default function ApiKeys() {
               <InfoHoverCard text={localize('com_ui_api_keys_description')} />
             </div>
           </OGDialogHeader>
+          {contextHubEnabled && <ContextHubEndpoint />}
           <List onCreate={() => setCreateOpen(true)} />
           <div className="flex items-center gap-2">
             <Admin />

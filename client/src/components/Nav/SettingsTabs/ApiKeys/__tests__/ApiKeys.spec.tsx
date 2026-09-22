@@ -15,6 +15,12 @@ jest.mock('librechat-data-provider/react-query', () => ({
   useDeleteAgentApiKeyMutation: jest.fn(),
 }));
 
+const mockUseGetStartupConfig = jest.fn();
+jest.mock('~/data-provider/Endpoints/queries', () => ({
+  ...jest.requireActual('~/data-provider/Endpoints/queries'),
+  useGetStartupConfig: () => mockUseGetStartupConfig(),
+}));
+
 const mockQuery = useGetAgentApiKeysQuery as jest.Mock;
 const mockCreate = useCreateAgentApiKeyMutation as jest.Mock;
 const mockDelete = useDeleteAgentApiKeyMutation as jest.Mock;
@@ -47,6 +53,7 @@ describe('ApiKeys', () => {
       isLoading: false,
     });
     mockDelete.mockReturnValue({ mutateAsync: jest.fn(), isLoading: false });
+    mockUseGetStartupConfig.mockReturnValue({ data: { contextHubEnabled: false } });
   });
 
   it('renders a manage trigger without opening the dialog', () => {
@@ -95,5 +102,19 @@ describe('ApiKeys', () => {
     fireEvent.click(getAllByRole('button', { name: 'Create API Key' })[0]);
     fireEvent.click(getByRole('button', { name: 'Cancel' }));
     expect(mutateAsync).not.toHaveBeenCalled();
+  });
+
+  it('hides the context hub endpoint when the operator has not enabled it', () => {
+    const { queryByText } = openManageDialog();
+    expect(queryByText('Context Hub MCP Endpoint')).not.toBeInTheDocument();
+  });
+
+  it('shows the context hub endpoint once the operator enables it', () => {
+    mockUseGetStartupConfig.mockReturnValue({ data: { contextHubEnabled: true } });
+    const { getByText, getByLabelText } = openManageDialog();
+    expect(getByText('Context Hub MCP Endpoint')).toBeInTheDocument();
+    expect((getByLabelText('Context Hub MCP Endpoint') as HTMLInputElement).value).toContain(
+      '/api/hub/mcp',
+    );
   });
 });
