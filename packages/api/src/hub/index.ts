@@ -2,5 +2,8 @@ export * from './thread';
 export * from './render';
 export * from './source';
 export * from './adapters';
+export * from './config';
 export * from './mcp';
 export * from './ingest';
+export * from './importJob';
+export * from './importRoute';

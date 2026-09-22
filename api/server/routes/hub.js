@@ -1,10 +1,15 @@
+const multer = require('multer');
 const express = require('express');
 const {
   createContextHubMcpHandler,
+  createContextHubImportHandler,
   contextHubMcpLimiter,
+  contextHubImportLimiter,
   createRequireApiKeyAuth,
+  resolveImportMaxFileSize,
 } = require('@librechat/api');
-const { configMiddleware } = require('~/server/middleware');
+const { storage, importFileFilter } = require('~/server/routes/files/multer');
+const { configMiddleware, requireJwtAuth } = require('~/server/middleware');
 const db = require('~/models');
 
 const router = express.Router();
@@ -33,5 +38,48 @@ const mcpHandler = createContextHubMcpHandler({ methods: db });
  * can key its window by the authenticated user rather than by IP.
  */
 router.all('/mcp', apiKeyMiddleware, configMiddleware, contextHubMcpLimiter, mcpHandler);
+
+/**
+ * The upload of a user's own export, through the LibreChat UI — an ordinary
+ * session (`requireJwtAuth`), not the API-key path the MCP endpoint above
+ * uses. `configMiddleware` runs before `multer` because its disk-storage
+ * destination reads `req.config.paths.uploads`. Reuses the same disk storage
+ * and JSON-only filter `/api/convos/import` already uses, and the same
+ * env-configured size ceiling, since this is the same class of upload.
+ */
+const uploadSingle = multer({
+  storage,
+  fileFilter: importFileFilter,
+  limits: { fileSize: resolveImportMaxFileSize() },
+}).single('file');
+
+function handleImportUpload(req, res, next) {
+  uploadSingle(req, res, (err) => {
+    if (err && err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(413).json({
+        error: {
+          message: 'File exceeds the maximum allowed size',
+          type: 'invalid_request_error',
+          code: 'file_too_large',
+        },
+      });
+    }
+    if (err) {
+      return next(err);
+    }
+    next();
+  });
+}
+
+const importHandler = createContextHubImportHandler({ methods: db });
+
+router.post(
+  '/import',
+  requireJwtAuth,
+  configMiddleware,
+  contextHubImportLimiter,
+  handleImportUpload,
+  importHandler,
+);
 
 module.exports = router;

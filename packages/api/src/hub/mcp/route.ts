@@ -1,11 +1,13 @@
 import { rateLimit } from 'express-rate-limit';
 import { logger } from '@librechat/data-schemas';
-import type { AppConfig } from '@librechat/data-schemas';
 import type { RequestHandler, Response } from 'express';
 import type { ServerRequest } from '../../types/http';
 import type { HubStoreMethods } from './mongoStore';
 import { createHubMongoStore } from './mongoStore';
+import { isContextHubMcpEnabled } from '../config';
 import { handleHubMcpRequest } from './http';
+
+export { isContextHubMcpEnabled };
 
 export const CONTEXT_HUB_MCP_RATE_WINDOW_MS = 60_000;
 export const CONTEXT_HUB_MCP_RATE_MAX = 120;
@@ -27,11 +29,6 @@ export const contextHubMcpLimiter: RequestHandler = rateLimit({
   legacyHeaders: false,
   keyGenerator: (req) => contextHubMcpRateLimitKey(req as ServerRequest),
 });
-
-/** Pure so the gate can be unit-tested without building a request. */
-export function isContextHubMcpEnabled(config: AppConfig | undefined): boolean {
-  return config?.contextHub?.enabled === true && config.contextHub.mcp?.enabled === true;
-}
 
 export interface CreateContextHubMcpHandlerDeps {
   methods: HubStoreMethods;
