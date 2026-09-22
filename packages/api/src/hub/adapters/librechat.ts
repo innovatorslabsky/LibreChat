@@ -5,7 +5,7 @@ import { compactMessages, orderMessages, hubThreadId } from '../thread';
 /**
  * Converts a LibreChat conversation already loaded from the database — not
  * an exported JSON file — into the canonical archive shape. This is what the
- * "Archive to Context Hub" action uses: it reads the conversation the user
+ * "Save to MindFerry" action uses: it reads the conversation the user
  * already has open and converts it directly, rather than round-tripping
  * through an export file and the upload endpoint.
  */

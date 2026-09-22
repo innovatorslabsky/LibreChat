@@ -106,14 +106,14 @@ describe('ApiKeys', () => {
 
   it('hides the context hub endpoint when the operator has not enabled it', () => {
     const { queryByText } = openManageDialog();
-    expect(queryByText('Context Hub MCP Endpoint')).not.toBeInTheDocument();
+    expect(queryByText('MindFerry MCP Endpoint')).not.toBeInTheDocument();
   });
 
   it('shows the context hub endpoint once the operator enables it', () => {
     mockUseGetStartupConfig.mockReturnValue({ data: { contextHubEnabled: true } });
     const { getByText, getByLabelText } = openManageDialog();
-    expect(getByText('Context Hub MCP Endpoint')).toBeInTheDocument();
-    expect((getByLabelText('Context Hub MCP Endpoint') as HTMLInputElement).value).toContain(
+    expect(getByText('MindFerry MCP Endpoint')).toBeInTheDocument();
+    expect((getByLabelText('MindFerry MCP Endpoint') as HTMLInputElement).value).toContain(
       '/api/hub/mcp',
     );
   });

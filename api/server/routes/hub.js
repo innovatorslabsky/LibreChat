@@ -86,7 +86,7 @@ router.post(
 );
 
 /**
- * "Archive to Context Hub" for a conversation the user already owns —
+ * "Save to MindFerry" for a conversation the user already owns —
  * converts it directly rather than round-tripping through an export file.
  */
 const archiveHandler = createContextHubArchiveHandler({

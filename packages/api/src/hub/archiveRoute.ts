@@ -34,7 +34,7 @@ export interface CreateContextHubArchiveHandlerDeps {
 }
 
 /**
- * Builds the handler behind "Archive to Context Hub": converts a
+ * Builds the handler behind "Save to MindFerry": converts a
  * conversation the user already owns directly into the canonical archive
  * shape, without a round trip through an export file. `getConvo` is already
  * scoped to `userId` by the caller this repo passes in (`db.getConvo`), so a
