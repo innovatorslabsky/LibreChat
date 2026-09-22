@@ -55,10 +55,22 @@ export interface HubThreadSearchResult {
   searchText: string;
 }
 
+/**
+ * Which client wrote a note — `chat` (claude.ai web), `code` (Claude Code),
+ * `agent` (an external agent such as Muse, Hermes, or OpenClaw), or `other`.
+ * This is what lets a note left by one surface read as distinct from one
+ * left by another when several clients share the same archive.
+ */
+export type HubNoteSurface = 'chat' | 'code' | 'agent' | 'other';
+
 export interface HubNoteInput {
   title: string;
   text: string;
   threadId?: string;
+  surface?: HubNoteSurface;
+  /** Free text distinguishing one session from another of the same surface,
+   *  e.g. a Claude Code working directory or a scheduled task's name. */
+  sessionTag?: string;
 }
 
 export interface HubNoteRecord extends HubNoteInput {

@@ -13,7 +13,9 @@ export interface GitHubContentsClientConfig {
   owner: string;
   repo: string;
   token: string;
-  fetchFn?: typeof fetch;
+  /** Only the call shape this client uses — not `typeof fetch`'s full static
+   *  surface (`preconnect`, etc.) — so a plain test double satisfies it. */
+  fetchFn?: (url: string, init?: RequestInit) => Promise<Response>;
 }
 
 export interface GitHubWriteFileParams {

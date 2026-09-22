@@ -25,11 +25,18 @@ export interface HubSearchParams {
   snippetLength: number;
 }
 
+/** Which client wrote a note — lets a note left by one surface read as
+ *  distinct from one left by another when several clients share the archive. */
+export type HubNoteSurface = 'chat' | 'code' | 'agent' | 'other';
+
 export interface HubNoteInput {
   title: string;
   text: string;
   /** Anchors the note to a thread when the writer knows which one it is about. */
   threadId?: string;
+  surface?: HubNoteSurface;
+  /** Distinguishes one session from another of the same surface. */
+  sessionTag?: string;
 }
 
 export interface HubNote extends HubNoteInput {

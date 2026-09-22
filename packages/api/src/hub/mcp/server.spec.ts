@@ -225,5 +225,44 @@ describe('createHubMcpServer', () => {
       expect(textOf(await call(client, 'read_notes'))).toContain('The hub has no notes.');
       await close();
     });
+
+    it('tags a note with which client wrote it and a session, so readers can tell them apart', async () => {
+      const store = createHubMemoryStore({ threads: claudeThreads });
+      const codeSession = await connect({ store });
+      const chatSession = await connect({ store });
+
+      await call(codeSession.client, 'append_note', {
+        title: 'Refactor plan',
+        text: 'Splitting the render module.',
+        threadId: 'claude:c1',
+        surface: 'code',
+        sessionTag: '/home/user/LibreChat',
+      });
+      await call(chatSession.client, 'append_note', {
+        title: 'Design question',
+        text: 'Should notes be per-thread or global?',
+        threadId: 'claude:c1',
+        surface: 'chat',
+      });
+
+      const text = textOf(await call(chatSession.client, 'read_notes', { threadId: 'claude:c1' }));
+
+      expect(text).toContain('code');
+      expect(text).toContain('/home/user/LibreChat');
+      expect(text).toContain('chat');
+      await codeSession.close();
+      await chatSession.close();
+    });
+
+    it('leaves surface and session tag off the rendering when a note carries neither', async () => {
+      const { client, close } = await connect();
+
+      await call(client, 'append_note', { title: 'Untagged', text: 'no metadata here' });
+      const text = textOf(await call(client, 'read_notes'));
+
+      expect(text).toContain('## Untagged');
+      expect(text).not.toContain('undefined');
+      await close();
+    });
   });
 });

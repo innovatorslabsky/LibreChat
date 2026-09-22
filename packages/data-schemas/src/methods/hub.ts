@@ -72,6 +72,8 @@ function toNoteRecord(doc: IHubNote): HubNoteRecord {
     title: doc.title,
     text: doc.text,
     threadId: doc.threadId,
+    surface: doc.surface,
+    sessionTag: doc.sessionTag,
     createdAt: doc.createdAt,
   };
 }
@@ -181,6 +183,8 @@ export function createHubMethods(mongoose: typeof import('mongoose')): HubMethod
         title: note.title,
         text: note.text,
         threadId: note.threadId,
+        surface: note.surface,
+        sessionTag: note.sessionTag,
       });
       return toNoteRecord(doc);
     } catch (error) {

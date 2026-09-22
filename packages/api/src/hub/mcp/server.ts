@@ -53,7 +53,7 @@ export function createHubMcpServer(options: HubMcpServerOptions): McpServer {
     searchLimit = CONTEXT_HUB_DEFAULT_SEARCH_LIMIT,
     snippetLength = CONTEXT_HUB_DEFAULT_SNIPPET_LENGTH,
     allowNotes = true,
-    name = 'librechat-context-hub',
+    name = 'mindferry',
     version = '1.0.0',
   } = options;
 
@@ -124,12 +124,15 @@ export function createHubMcpServer(options: HubMcpServerOptions): McpServer {
           threadId ? `No notes are anchored to "${threadId}".` : 'The hub has no notes.',
         );
       }
-      const rendered = notes.map(
-        (note) =>
-          `## ${note.title}\n${note.createdAt.toISOString()}${
-            note.threadId ? ` · ${note.threadId}` : ''
-          }\n\n${note.text}`,
-      );
+      const rendered = notes.map((note) => {
+        const meta = [
+          note.createdAt.toISOString(),
+          note.surface,
+          note.sessionTag,
+          note.threadId,
+        ].filter(Boolean);
+        return `## ${note.title}\n${meta.join(' · ')}\n\n${note.text}`;
+      });
       return asText(rendered.join('\n\n'));
     },
   );
@@ -145,10 +148,21 @@ export function createHubMcpServer(options: HubMcpServerOptions): McpServer {
           title: z.string().min(1).describe('Short label for the note'),
           text: z.string().min(1).describe('The note body, in Markdown'),
           threadId: z.string().min(1).optional().describe('Anchor the note to this thread'),
+          surface: z
+            .enum(['chat', 'code', 'agent', 'other'])
+            .optional()
+            .describe(
+              'Which client is writing this note — claude.ai chat, Claude Code, an external agent, or other',
+            ),
+          sessionTag: z
+            .string()
+            .max(200)
+            .optional()
+            .describe('Free text distinguishing this session from others of the same surface'),
         },
       },
-      async ({ title, text, threadId }) => {
-        const note = await store.appendNote({ title, text, threadId });
+      async ({ title, text, threadId, surface, sessionTag }) => {
+        const note = await store.appendNote({ title, text, threadId, surface, sessionTag });
         return asText(`Saved note ${note.id}.`);
       },
     );

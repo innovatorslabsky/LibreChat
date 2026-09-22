@@ -175,6 +175,30 @@ describe('notes', () => {
 
     expect(await methods.listHubNotes(userB)).toEqual([]);
   });
+
+  it('persists which surface wrote the note and its session tag', async () => {
+    await methods.appendHubNote(userA, {
+      title: 'Refactor plan',
+      text: 'Splitting the render module.',
+      threadId: 'claude:c1',
+      surface: 'code',
+      sessionTag: '/home/user/LibreChat',
+    });
+
+    const [note] = await methods.listHubNotes(userA, 'claude:c1');
+
+    expect(note.surface).toBe('code');
+    expect(note.sessionTag).toBe('/home/user/LibreChat');
+  });
+
+  it('leaves surface and session tag unset when the caller does not provide them', async () => {
+    await methods.appendHubNote(userA, { title: 'Untagged', text: 'no metadata' });
+
+    const [note] = await methods.listHubNotes(userA);
+
+    expect(note.surface).toBeUndefined();
+    expect(note.sessionTag).toBeUndefined();
+  });
 });
 
 describe('deleteAllHubData', () => {
