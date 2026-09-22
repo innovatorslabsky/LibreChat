@@ -445,6 +445,7 @@ const startServer = async () => {
   app.use('/api/tags', routes.tags);
   app.use('/api/mcp', routes.mcp);
   app.use('/api/hub', routes.hub);
+  app.use('/.well-known', routes.hubWellKnown);
   app.use('/api/rum', routes.rum);
 
   app.use('/metrics', metricsRouter);

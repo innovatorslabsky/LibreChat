@@ -9,6 +9,7 @@ import { createAgentTriggerDeliveryModel } from './triggerDelivery';
 import { createSkillSyncStatusModel } from './skillSyncStatus';
 import { createConversationTagModel } from './conversationTag';
 import { createCodeEnvironmentModel } from './codeEnvironment';
+import { createHubOAuthClientModel } from './hubOAuthClient';
 import { createAgentCategoryModel } from './agentCategory';
 import { createChatProjectModel } from './chatProject';
 import { createAgentApiKeyModel } from './agentApiKey';
@@ -63,6 +64,7 @@ export function createModels(mongoose: typeof import('mongoose')): {
   AgentApiKey: ReturnType<typeof createAgentApiKeyModel>;
   HubThread: ReturnType<typeof createHubThreadModel>;
   HubNote: ReturnType<typeof createHubNoteModel>;
+  HubOAuthClient: ReturnType<typeof createHubOAuthClientModel>;
   AgentCategory: ReturnType<typeof createAgentCategoryModel>;
   MCPServer: ReturnType<typeof createMCPServerModel>;
   Role: ReturnType<typeof createRoleModel>;
@@ -114,6 +116,7 @@ export function createModels(mongoose: typeof import('mongoose')): {
     AgentApiKey: createAgentApiKeyModel(mongoose),
     HubThread: createHubThreadModel(mongoose),
     HubNote: createHubNoteModel(mongoose),
+    HubOAuthClient: createHubOAuthClientModel(mongoose),
     AgentCategory: createAgentCategoryModel(mongoose),
     MCPServer: createMCPServerModel(mongoose),
     Role: createRoleModel(mongoose),

@@ -7,8 +7,11 @@ import type {
   HubDataDeleteResult,
   HubThreadSearchQuery,
   HubThreadSearchResult,
+  HubOAuthClientInput,
+  HubOAuthClientRecord,
 } from '~/types';
 import type { IHubThread, IHubMessage } from '~/schema/hubThread';
+import type { IHubOAuthClient } from '~/schema/hubOAuthClient';
 import type { IHubNote } from '~/schema/hubNote';
 import logger from '~/config/winston';
 
@@ -22,6 +25,11 @@ export interface HubMethods {
   listHubNotes: (userId: string, threadId?: string) => Promise<HubNoteRecord[]>;
   appendHubNote: (userId: string, note: HubNoteInput) => Promise<HubNoteRecord>;
   deleteAllHubData: (userId: string) => Promise<HubDataDeleteResult>;
+  /** Dynamic client registration (RFC 7591) is unauthenticated by design —
+   *  no userId scoping, since a registered client belongs to the hub's OAuth
+   *  server as a whole, not to whichever user's browser completes it. */
+  registerHubOAuthClient: (client: HubOAuthClientInput) => Promise<HubOAuthClientRecord>;
+  getHubOAuthClient: (clientId: string) => Promise<HubOAuthClientRecord | null>;
 }
 
 function toObjectId(userId: string): Types.ObjectId {
@@ -63,6 +71,15 @@ function toThreadRecord(doc: IHubThread): HubThreadRecord {
     createdAt: doc.createdAt,
     updatedAt: doc.updatedAt,
     messages: doc.messages.map(toMessageRecord),
+  };
+}
+
+function toOAuthClientRecord(doc: IHubOAuthClient): HubOAuthClientRecord {
+  return {
+    clientId: doc.clientId,
+    clientName: doc.clientName,
+    redirectUris: doc.redirectUris,
+    createdAt: doc.createdAt,
   };
 }
 
@@ -211,6 +228,34 @@ export function createHubMethods(mongoose: typeof import('mongoose')): HubMethod
     }
   }
 
+  async function registerHubOAuthClient(
+    client: HubOAuthClientInput,
+  ): Promise<HubOAuthClientRecord> {
+    try {
+      const HubOAuthClient = mongoose.models.HubOAuthClient;
+      const doc = await HubOAuthClient.create({
+        clientId: client.clientId,
+        clientName: client.clientName,
+        redirectUris: client.redirectUris,
+      });
+      return toOAuthClientRecord(doc);
+    } catch (error) {
+      logger.error('[registerHubOAuthClient] Error registering OAuth client:', error);
+      throw error;
+    }
+  }
+
+  async function getHubOAuthClient(clientId: string): Promise<HubOAuthClientRecord | null> {
+    try {
+      const HubOAuthClient = mongoose.models.HubOAuthClient;
+      const doc = (await HubOAuthClient.findOne({ clientId }).lean()) as IHubOAuthClient | null;
+      return doc ? toOAuthClientRecord(doc) : null;
+    } catch (error) {
+      logger.error('[getHubOAuthClient] Error reading OAuth client:', error);
+      throw error;
+    }
+  }
+
   return {
     upsertHubThread,
     getHubThread,
@@ -218,5 +263,7 @@ export function createHubMethods(mongoose: typeof import('mongoose')): HubMethod
     listHubNotes,
     appendHubNote,
     deleteAllHubData,
+    registerHubOAuthClient,
+    getHubOAuthClient,
   };
 }

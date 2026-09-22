@@ -82,3 +82,13 @@ export interface HubDataDeleteResult {
   deletedThreads: number;
   deletedNotes: number;
 }
+
+export interface HubOAuthClientInput {
+  clientId: string;
+  clientName?: string;
+  redirectUris: string[];
+}
+
+export interface HubOAuthClientRecord extends HubOAuthClientInput {
+  createdAt: Date;
+}

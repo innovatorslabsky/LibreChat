@@ -8,8 +8,8 @@ import { createConfiguredGitArchiveTarget } from './git/config';
 import { isContextHubEnabled } from './config';
 import { UnknownExportError } from './source';
 
-export const CONTEXT_HUB_IMPORT_RATE_WINDOW_MS = 15 * 60_000;
-export const CONTEXT_HUB_IMPORT_RATE_MAX = 10;
+export const CONTEXT_HUB_IMPORT_RATE_WINDOW_MS: number = 15 * 60_000;
+export const CONTEXT_HUB_IMPORT_RATE_MAX: number = 10;
 
 /**
  * A dedicated, modest budget: archiving a file is heavier than a read tool

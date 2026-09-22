@@ -1,6 +1,7 @@
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import type { HubThreadRecord } from '~/types';
+import hubOAuthClientSchema from '~/schema/hubOAuthClient';
 import { createHubMethods, type HubMethods } from './hub';
 import hubThreadSchema from '~/schema/hubThread';
 import hubNoteSchema from '~/schema/hubNote';
@@ -37,6 +38,9 @@ beforeAll(async () => {
   }
   if (!mongoose.models.HubNote) {
     mongoose.model('HubNote', hubNoteSchema);
+  }
+  if (!mongoose.models.HubOAuthClient) {
+    mongoose.model('HubOAuthClient', hubOAuthClientSchema);
   }
   methods = createHubMethods(mongoose);
   await mongoose.connect(mongoServer.getUri());
@@ -214,5 +218,38 @@ describe('deleteAllHubData', () => {
     expect(await methods.getHubThread(userA, 'claude:c1')).toBeNull();
     expect(await methods.getHubThread(userB, 'claude:c1')).not.toBeNull();
     expect(await methods.listHubNotes(userB)).toHaveLength(1);
+  });
+});
+
+describe('OAuth client registration', () => {
+  it('registers a client and reads it back by id', async () => {
+    await methods.registerHubOAuthClient({
+      clientId: 'mf_abc123',
+      clientName: 'Claude',
+      redirectUris: ['https://claude.ai/api/mcp/callback'],
+    });
+
+    const client = await methods.getHubOAuthClient('mf_abc123');
+
+    expect(client?.clientName).toBe('Claude');
+    expect(client?.redirectUris).toEqual(['https://claude.ai/api/mcp/callback']);
+  });
+
+  it('returns null for a client id that was never registered', async () => {
+    expect(await methods.getHubOAuthClient('mf_missing')).toBeNull();
+  });
+
+  it('rejects a second registration reusing the same client id', async () => {
+    await methods.registerHubOAuthClient({
+      clientId: 'mf_dup',
+      redirectUris: ['https://example.com/callback'],
+    });
+
+    await expect(
+      methods.registerHubOAuthClient({
+        clientId: 'mf_dup',
+        redirectUris: ['https://example.com/callback'],
+      }),
+    ).rejects.toThrow();
   });
 });

@@ -1,6 +1,7 @@
 const multer = require('multer');
 const express = require('express');
 const { CLIENT_MESSAGE_SELECT } = require('@librechat/data-schemas');
+const { PermissionTypes, Permissions } = require('librechat-data-provider');
 const {
   createContextHubMcpHandler,
   createContextHubImportHandler,
@@ -10,6 +11,14 @@ const {
   contextHubArchiveLimiter,
   createRequireApiKeyAuth,
   resolveImportMaxFileSize,
+  attachHubOAuthWwwAuthenticate,
+  createHubOAuthRegisterHandler,
+  createHubOAuthAuthorizeHandler,
+  createHubOAuthConsentHandler,
+  createHubOAuthTokenHandler,
+  hubOAuthRegisterLimiter,
+  hubOAuthTokenLimiter,
+  generateCheckAccess,
 } = require('@librechat/api');
 const { storage, importFileFilter } = require('~/server/routes/files/multer');
 const { configMiddleware, requireJwtAuth } = require('~/server/middleware');
@@ -40,7 +49,14 @@ const mcpHandler = createContextHubMcpHandler({ methods: db });
  * `req.config` from `req.user`, and the rate limiter runs after both so it
  * can key its window by the authenticated user rather than by IP.
  */
-router.all('/mcp', apiKeyMiddleware, configMiddleware, contextHubMcpLimiter, mcpHandler);
+router.all(
+  '/mcp',
+  attachHubOAuthWwwAuthenticate,
+  apiKeyMiddleware,
+  configMiddleware,
+  contextHubMcpLimiter,
+  mcpHandler,
+);
 
 /**
  * The upload of a user's own export, through the LibreChat UI — an ordinary
@@ -102,5 +118,39 @@ router.post(
   contextHubArchiveLimiter,
   archiveHandler,
 );
+
+/**
+ * OAuth 2.1 authorization server for the MCP endpoint above — required
+ * because Claude.ai's "Add custom connector" dialog takes only a name and a
+ * URL, with no field for a pre-shared credential; it discovers this flow via
+ * the `WWW-Authenticate` header a 401 from `/mcp` now carries. `/register`
+ * and `/token` are reachable without a LibreChat session by design (see
+ * their handlers); `/authorize` only validates and redirects to the SPA's
+ * consent page; `/consent` is where an authenticated decision actually
+ * happens, gated by the same REMOTE_AGENTS permission the API-keys route
+ * uses, since approving here mints the same kind of key.
+ */
+const checkRemoteAgentsUse = generateCheckAccess({
+  permissionType: PermissionTypes.REMOTE_AGENTS,
+  permissions: [Permissions.USE],
+  getRoleByName: db.getRoleByName,
+});
+
+router.post(
+  '/oauth/register',
+  hubOAuthRegisterLimiter,
+  createHubOAuthRegisterHandler({ methods: db }),
+);
+
+router.get('/oauth/authorize', createHubOAuthAuthorizeHandler({ methods: db }));
+
+router.post(
+  '/oauth/consent',
+  requireJwtAuth,
+  checkRemoteAgentsUse,
+  createHubOAuthConsentHandler({ methods: db }),
+);
+
+router.post('/oauth/token', hubOAuthTokenLimiter, createHubOAuthTokenHandler({ methods: db }));
 
 module.exports = router;
